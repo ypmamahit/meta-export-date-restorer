@@ -49,7 +49,6 @@ def extract_media(node, current_time=None):
 
 print("Hunting down EVERY JSON file in all folders and subfolders...")
 
-# THE FIX: This now digs into album/0, album/1, etc., to read their internal JSONs
 for root, dirs, files in os.walk('.'):
     for file in files:
         if file.endswith('.json'):
