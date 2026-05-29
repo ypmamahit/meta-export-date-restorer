@@ -10,10 +10,11 @@ This script maps all 6 known variations of Facebook's time markers (`creation_ti
 ### Prerequisites
 Ensure `exiftool` is installed on your Linux machine:
 ```bash
-sudo apt update && sudo apt install exiftool -y
+sudo apt update && sudo apt install exiftool -y```
 
 How to Use
 1. Download your Facebook information from Meta in JSON format (Select the Posts activity block only).
 2. Extract the ZIP archive onto your computer.
 3. Drop fb_meta_fixer.py into the root posts/ directory (the folder containing your master JSON indices alongside the media/ and album/ subfolders).
-4. Right-click an empty space inside that directory, choose Open in Terminal, and execute: python3 fb_meta_fixer.py
+4. Right-click an empty space inside that directory, choose Open in Terminal, and execute:
+```python3 fb_meta_fixer.py```
