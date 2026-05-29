@@ -10,7 +10,8 @@ This script maps all 6 known variations of Facebook's time markers (`creation_ti
 ### Prerequisites
 Ensure `exiftool` is installed on your Linux machine:
 ```bash
-sudo apt update && sudo apt install exiftool -y```
+sudo apt update && sudo apt install exiftool -y
+```
 
 How to Use
 1. Download your Facebook information from Meta in JSON format (Select the Posts activity block only).
