@@ -1,21 +1,53 @@
-# Facebook JSON Metadata EXIF Restorer
+# Meta Export Date Restorer (Facebook & Instagram)
 
-A lightweight, zero-dependency Python script designed for Linux Mint/Ubuntu users to parse complex Facebook "Download Your Information" database hierarchies and hardcode original timestamps back into photo and video headers.
+When downloading your historical archives from Facebook or Instagram, the exported photos and videos lose their original timeline metadata. Local files are forced to show the creation date of the *day you downloaded the archive*, throwing your local file system, photo library, or cloud storage backup into total chronological chaos.
 
-### Why This Exists
-Facebook strips original camera EXIF data upon upload, but provides historical timestamps inside a messy web of localized, nested JSON files when you export your archive. Existing tools often choke on localized folder names (like Romaji translations) or split multi-file album structures. 
+Fortunately, Meta ships database logs alongside your media in `.json` format. This script crawls your export root directory, maps filenames to their true historical timestamps, and uses `exiftool` to permanently inject those dates back into the binary EXIF properties of your photos and videos.
 
-This script maps all 6 known variations of Facebook's time markers (`creation_timestamp`, `taken_timestamp`, `upload_timestamp`, etc.) and pushes them directly into your media files recursively.
+## ⚠️ Important Accuracy Note: Camera Date vs. Upload Date
 
-### Prerequisites
-Ensure `exiftool` is installed on your Linux machine:
-```bash
-sudo apt update && sudo apt install exiftool -y
-```
+Because Meta aggressively modifies user uploads, it is critical to understand what metadata your export actually contains:
 
-How to Use
-1. Download your Facebook information from Meta in JSON format (Select the Posts activity block only).
-2. Extract the ZIP archive onto your computer.
-3. Drop fb_meta_fixer.py into the root posts/ directory (the folder containing your master JSON indices alongside the media/ and album/ subfolders).
-4. Right-click an empty space inside that directory, choose Open in Terminal, and execute:
-```python3 fb_meta_fixer.py```
+1. **True Camera Dates (Priority 1):** In certain parts of modern backups (such as Instagram Stories), Meta retains the true hardware capture stamp under a buried variable `date_time_original` (e.g., `20250223T045820.000Z`). **This script is hardcoded to prioritize this exact timestamp.**
+2. **Platform Upload Dates (Priority 2 Fallback):** For standard timeline posts or older archival blocks, Meta permanently strips the camera EXIF file metadata upon upload. For those files, the backup only provides a `creation_timestamp`, which tracks **the day and time you uploaded the file to Facebook or Instagram**.
+
+If a true camera date does not exist, this script automatically falls back to the Platform Upload date. While this means a photo taken in 2015 but posted as a throwback in 2018 will register as 2018, it still successfully moves your media files out of the present day and directly back into their proper historical timeline.
+
+## Prerequisites
+
+1. **Python 3.x:** Installed and added to your system environment variables.
+2. **ExifTool:** The script drives ExifTool in the background to modify core image metadata.
+   - **Windows:** Download the application executable from the [Official ExifTool Site](https://exiftool.org/), rename your download to `exiftool.exe`, and drag it directly into the directory containing this script.
+   - **macOS:** Install via Homebrew: `brew install exiftool`
+   - **Linux:** Install via your package manager: `sudo apt install libimage-exiftool-perl`
+
+## Execution and Setup
+
+Download the `restore_dates.py` file and place it directly into the root directory of your extracted data folder.
+
+### Directory Structure Examples
+
+#### For Facebook Exports:
+```text
+/your_facebook_export/
+├── /messages/
+├── /photos_and_videos/
+├── /posts/
+└── restore_dates.py   <-- Place here
+For Instagram Exports:
+Plaintext
+/your_instagram_export/
+├── /media/
+├── /your_instagram_activity/
+└── restore_dates.py   <-- Place here
+Running the Utility
+Open your command prompt or terminal, change directory (cd) into your root export folder, and run:
+
+Bash
+python restore_dates.py
+How It Processes Your Files
+Discovery: Walks down all paths to open and read nested .json indices.
+
+Deduplication & Extraction: Resolves filenames derived from data URIs, parses date matrices, and ensures accurate data targeting.
+
+Safe Execution: Commands are safely piped. File anomalies or broken JSON formatting will be skipped without interrupting or crashing a multi-thousand file execution batch.
