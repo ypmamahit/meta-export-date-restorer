@@ -22,7 +22,6 @@ def find_best_date_in_tree(node):
     """
     Deep-scans a specific JSON sub-tree to grab the highest accuracy date available.
     """
-    # PRIORITY 1: Look for the raw camera hardware timestamp if preserved
     def dig_for_exact(n):
         if isinstance(n, dict):
             if 'date_time_original' in n and isinstance(n['date_time_original'], str):
@@ -41,7 +40,6 @@ def find_best_date_in_tree(node):
     if exact_date:
         return exact_date
         
-    # PRIORITY 2: Fallback to Unix timestamps representing the upload date
     unix_keys = ['taken_timestamp', 'creation_timestamp', 'upload_timestamp', 'timestamp', 'timestamp_value']
     
     def dig_for_unix(n):
@@ -96,6 +94,39 @@ def extract_media(node, current_date=None):
         for item in node:
             extract_media(item, current_date)
 
+def fix_mislabeled_extensions():
+    """
+    Scans files ending in .webp, checks if ExifTool considers them JPEGs, 
+    and renames them. Updates the global tracking dict to reflect the change.
+    """
+    print("🛠 Checking for mislabeled .webp files that are actually JPEGs...")
+    renamed_count = 0
+
+    for root, dirs, files in os.walk('.'):
+        for file in files:
+            if file.lower().endswith('.webp'):
+                filepath = os.path.join(root, file)
+                try:
+                    # Ask ExifTool for the real FileType
+                    cmd = ['exiftool', '-s3', '-FileType', filepath]
+                    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+                    real_type = result.stdout.strip()
+
+                    if real_type == "JPEG":
+                        new_filename = file[:-5] + ".jpg" # replace .webp with .jpg
+                        new_filepath = os.path.join(root, new_filename)
+                        
+                        os.rename(filepath, new_filepath)
+                        renamed_count += 1
+
+                        # Dynamically update our metadata map so the processing step tracks it correctly
+                        if file in media_dates:
+                            media_dates[new_filename] = media_dates.pop(file)
+                except Exception:
+                    pass
+    if renamed_count > 0:
+        print(f"🔄 Fixed {renamed_count} mislabeled files (renamed .webp -> .jpg).")
+
 def main():
     print("🔍 Scanning folders recursively for Meta JSON databases...")
     
@@ -108,9 +139,13 @@ def main():
                         data = json.load(f)
                         extract_media(data)
                 except Exception:
-                    pass  # Safely ignore unreadable or corrupted JSON files
+                    pass
 
     print(f"✅ Mapping Complete! Found timestamps for {len(media_dates)} unique media files.")
+    
+    # Run the extension fixer before writing tags
+    fix_mislabeled_extensions()
+
     print("📸 Injecting timeline data via ExifTool... (This may take a few minutes)")
 
     processed = 0
